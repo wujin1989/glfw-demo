@@ -14,6 +14,8 @@ link_directories(third-party/glfw/lib)
 
 set(SRCS
 	main/main.c
+	main/triangle.c
+	main/rectangle.c
 	glad/src/glad.c
 )
 

@@ -3,39 +3,14 @@
 #include "triangle.h"
 
 void triangle_create(triangle_ctx_t* ctx) {
-	float vertices[] = {
-		-0.5f, -0.5f, 0.0f,
-		 0.5f, -0.5f, 0.0f,
-		 0.0f,  0.5f, 0.0f
-	};
-	// 0. 创建和绑定VAO
-	glGenVertexArrays(1, &ctx->VAO);
-	glBindVertexArray(ctx->VAO);
-
-	// 1. 复制顶点数组到缓冲中供OpenGL使用
-	glGenBuffers(1, &ctx->VBO);
-	glBindBuffer(GL_ARRAY_BUFFER, ctx->VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-
-	// 2. 设置顶点属性指针
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
-	glEnableVertexAttribArray(0);
-
-	//这一步不是严格必要的，但通常建议这样做，以避免意外修改VBO。
-	// 一旦解除绑定，任何对GL_ARRAY_BUFFER的后续操作都不会影响当前的VBO。
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-	//当 VAO 处于活动状态时，请勿取消绑定 EBO，因为绑定的元素缓冲区对象存储在 VAO 中；保持 EBO 绑定。
-	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
-
-	//这一步是可选的，但通常建议这样做，以避免在之后的操作中意外修改当前VAO。
-	glBindVertexArray(0);
-
 	const char* VERTEX_SHADER_SOURCE =
 		"#version 330 core\n"
 		"layout (location = 0) in vec3 aPos;					\
+		 layout (location = 1) in vec3 aColor;					\
+		 out vec3 outColor;                                     \
 		 void main() {											\
 			 gl_Position = vec4(aPos.x, aPos.y, aPos.z, 1.0);	\
+			 outColor = aColor;                                 \
 		 }														\
 	    ";
 	ctx->vertexShader = glCreateShader(GL_VERTEX_SHADER);
@@ -52,8 +27,9 @@ void triangle_create(triangle_ctx_t* ctx) {
 	const char* FRAG_SHADER_SOURCE =
 		"#version 330 core\n"
 		"out vec4 FragColor;							\
+         in vec3 outColor;                              \
 		 void main() {									\
-			 FragColor = vec4(1.0f, 0.5f, 0.2f, 1.0f);	\
+			 FragColor = vec4(outColor, 1.0);   		\
 		 }												\
 	    ";
 	ctx->fragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
@@ -77,6 +53,38 @@ void triangle_create(triangle_ctx_t* ctx) {
 	}
 	glDeleteShader(ctx->vertexShader);
 	glDeleteShader(ctx->fragmentShader);
+
+	float vertices[] = {
+		// 位置              // 颜色
+		 0.5f, -0.5f, 0.0f,  1.0f, 0.0f, 0.0f,   // 右下
+		-0.5f, -0.5f, 0.0f,  0.0f, 1.0f, 0.0f,   // 左下
+		 0.0f,  0.5f, 0.0f,  0.0f, 0.0f, 1.0f    // 顶部
+	};
+	// 0. 创建和绑定VAO
+	glGenVertexArrays(1, &ctx->VAO);
+	glBindVertexArray(ctx->VAO);
+
+	// 1. 复制顶点数组到缓冲中供OpenGL使用
+	glGenBuffers(1, &ctx->VBO);
+	glBindBuffer(GL_ARRAY_BUFFER, ctx->VBO);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	// 2. 设置顶点属性指针
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	//这一步不是严格必要的，但通常建议这样做，以避免意外修改VBO。
+	// 一旦解除绑定，任何对GL_ARRAY_BUFFER的后续操作都不会影响当前的VBO。
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+	//当 VAO 处于活动状态时，请勿取消绑定 EBO，因为绑定的元素缓冲区对象存储在 VAO 中；保持 EBO 绑定。
+	//glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	//这一步是可选的，但通常建议这样做，以避免在之后的操作中意外修改当前VAO。
+	glBindVertexArray(0);
 }
 
 void triangle_draw(triangle_ctx_t* ctx) {

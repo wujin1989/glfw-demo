@@ -41,6 +41,8 @@ int main(void) {
 		printf("Failed to initialize GLAD\n");
 		abort();
 	}
+	//OpenGL确保至少有16个包含4分量的顶点属性可用
+	//get_max_vertex_attrs_num();
 	triangle_create(&triangle_ctx);
 	//rectangle_create(&rectangle_ctx);
 	while (!glfwWindowShouldClose(window)) {

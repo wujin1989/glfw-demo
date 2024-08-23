@@ -16,6 +16,7 @@ set(SRCS
 	main/main.c
 	main/triangle.c
 	main/rectangle.c
+	main/utils.c
 	glad/src/glad.c
 )
 

@@ -4,11 +4,9 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <threads.h>
-#include "triangle.h"
-#include "rectangle.h"
+#include "opengl-examples.h"
 
-triangle_ctx_t triangle_ctx;
-rectangle_ctx_t rectangle_ctx;
+opengl_ctx_t opengl_ctx;
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
@@ -41,24 +39,25 @@ int main(void) {
 		printf("Failed to initialize GLAD\n");
 		abort();
 	}
-	//OpenGL确保至少有16个包含4分量的顶点属性可用
-	//get_max_vertex_attrs_num();
-	triangle_create(&triangle_ctx);
-	//rectangle_create(&rectangle_ctx);
+	opengl_shader_program_create(&opengl_ctx, TYPE_TEXTURE_02);
+	opengl_scene_create(&opengl_ctx, TYPE_TEXTURE_02);
+	opengl_shader_program_use(&opengl_ctx);
+
 	while (!glfwWindowShouldClose(window)) {
 		process_input(window);
-		//bgn draw
+
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
-		triangle_draw(&triangle_ctx);
-		//rectangle_draw(&rectangle_ctx);
-		//end draw
+		
+		opengl_scene_draw(&opengl_ctx, TYPE_TEXTURE_02);
+
 		glfwPollEvents();
 		glfwSwapBuffers(window);
 		thrd_sleep(&(struct timespec) { .tv_sec = 0, .tv_nsec = 40000000 }, NULL);
 	}
-	triangle_destroy(&triangle_ctx);
-	//rectangle_destroy(&rectangle_ctx);
+	opengl_scene_destroy(&opengl_ctx, TYPE_TEXTURE_02);
+	opengl_shader_program_destroy(&opengl_ctx);
+
 	glfwTerminate();
 	return 0;
 }

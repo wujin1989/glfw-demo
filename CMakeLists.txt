@@ -9,14 +9,15 @@ set(CMAKE_C_STANDARD 11)
 
 include_directories(glad/include)
 include_directories(third-party/glfw/include)
+include_directories(third-party/stb)
 
 link_directories(third-party/glfw/lib)
 
 set(SRCS
 	main/main.c
-	main/triangle.c
-	main/rectangle.c
-	main/utils.c
+	main/opengl-examples.c
+	main/opengles-examples.c
+	main/vulkan-examples.c
 	glad/src/glad.c
 )
 

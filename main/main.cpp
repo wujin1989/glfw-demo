@@ -5,6 +5,7 @@
 #include <thread>
 #include "opengl-examples.h"
 
+#define SCENE	TYPE_MATRIX_02
 opengl_ctx_t opengl_ctx;
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
@@ -36,8 +37,8 @@ int main(void) {
 		printf("Failed to initialize GLAD\n");
 		abort();
 	}
-	opengl_shader_program_create(&opengl_ctx, TYPE_MATRIX_02);
-	opengl_scene_create(&opengl_ctx, TYPE_MATRIX_02);
+	opengl_shader_program_create(&opengl_ctx, SCENE);
+	opengl_scene_create(&opengl_ctx, SCENE);
 	opengl_shader_program_use(&opengl_ctx);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -46,13 +47,13 @@ int main(void) {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		
-		opengl_scene_draw(&opengl_ctx, TYPE_MATRIX_02);
+		opengl_scene_draw(&opengl_ctx, SCENE);
 
 		glfwPollEvents();
 		glfwSwapBuffers(window);
 		//std::this_thread::sleep_for(std::chrono::milliseconds(40));
 	}
-	opengl_scene_destroy(&opengl_ctx, TYPE_MATRIX_02);
+	opengl_scene_destroy(&opengl_ctx, SCENE);
 	opengl_shader_program_destroy(&opengl_ctx);
 
 	glfwTerminate();

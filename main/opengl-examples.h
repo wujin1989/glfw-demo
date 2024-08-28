@@ -5,7 +5,7 @@ typedef struct opengl_ctx_s {
 	unsigned int vbo;
 	unsigned int ebo;
 	unsigned int shader_program;
-	unsigned int textures[16];
+	unsigned int textures[16];	//opengl 3.3 着色器最多可以加载16个纹理
 }opengl_ctx_t;
 
 typedef enum opengl_scene_type_e {
@@ -17,6 +17,7 @@ typedef enum opengl_scene_type_e {
 	TYPE_TEXTURE_02,
 	TYPE_MATRIX_01,
 	TYPE_MATRIX_02,
+	TYPE_COORDS_01,
 }opengl_scene_type_t;
 
 extern void opengl_shader_program_create(opengl_ctx_t* ctx, opengl_scene_type_t type);

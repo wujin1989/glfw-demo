@@ -1,9 +1,12 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <string.h>
+#include <cstring>
 #include "opengl-examples.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
+#include <glm.hpp>
+#include <gtc/matrix_transform.hpp>
+#include <gtc/type_ptr.hpp>
 
 void opengl_shader_program_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	int  success;
@@ -81,6 +84,30 @@ void opengl_shader_program_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 			 }														\
 			";
 		
+		frag_shader_source =
+			"#version 330 core\n"
+			"out vec4 FragColor;																\
+			 in vec2 TexCoord;																	\
+			 uniform sampler2D texture0;														\
+			 uniform sampler2D texture1;														\
+			 void main() {																		\
+				FragColor = mix(texture(texture0, TexCoord), texture(texture1, TexCoord), 0.2);	\
+			 }																					\
+			";
+	}
+	if (type == TYPE_MATRIX_01 || type == TYPE_MATRIX_02) {
+		vertex_shader_source =
+			"#version 330 core\n"
+			"layout (location = 0) in vec3 aPos;					\
+			 layout (location = 1) in vec2 aTexCoord;				\
+			 out vec2 TexCoord;										\
+			 uniform mat4 uTransform;								\
+			 void main() {											\
+				gl_Position = uTransform * vec4(aPos, 1.0);			\
+				TexCoord = aTexCoord;								\
+			 }														\
+			";
+
 		frag_shader_source =
 			"#version 330 core\n"
 			"out vec4 FragColor;																\
@@ -180,7 +207,7 @@ void opengl_scene_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 		};
 		memcpy(vertices, v, sizeof(v));
 	}
-	if (type == TYPE_TEXTURE_02) {
+	if (type == TYPE_TEXTURE_02 || type == TYPE_MATRIX_01 || type == TYPE_MATRIX_02) {
 		float v[20] = {
 			0.5f,  0.5f, 0.0f,  1.0f, 1.0f,   // 右上
 			0.5f, -0.5f, 0.0f,  1.0f, 0.0f,   // 右下
@@ -197,7 +224,11 @@ void opengl_scene_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	glBindBuffer(GL_ARRAY_BUFFER, ctx->vbo);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
 
-	if (type == TYPE_RECTANGLE_01 || type == TYPE_RECTANGLE_02 || type == TYPE_TEXTURE_02) {
+	if (type == TYPE_RECTANGLE_01 
+		|| type == TYPE_RECTANGLE_02 
+		|| type == TYPE_TEXTURE_02 
+		|| type == TYPE_MATRIX_01
+		|| type == TYPE_MATRIX_02) {
 		// 2. 复制索引数据到元素缓冲中
 		glGenBuffers(1, &ctx->ebo);
 		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ctx->ebo);
@@ -215,7 +246,7 @@ void opengl_scene_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 		glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(float), (void*)(3 * sizeof(float)));
 		glEnableVertexAttribArray(1);
 	}
-	if (type == TYPE_TEXTURE_01 || type == TYPE_TEXTURE_02) {
+	if (type == TYPE_TEXTURE_01 || type == TYPE_TEXTURE_02 || type == TYPE_MATRIX_01 || type == TYPE_MATRIX_02) {
 		glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
 		glEnableVertexAttribArray(0);
 
@@ -241,7 +272,10 @@ void opengl_scene_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 		glBindTexture(GL_TEXTURE_2D, 0);//可选，防止意外修改
 		stbi_image_free(data);
 	}
-	if (type == TYPE_TEXTURE_02) {
+	if (type == TYPE_TEXTURE_02 || type == TYPE_MATRIX_01 || type == TYPE_MATRIX_02) {
+		//加载的图片的(0,0)在左上角，但是opengl的视口的原点(0,0)在左下角
+		stbi_set_flip_vertically_on_load(1);
+
 		int width, height, nrChannels;
 		unsigned char* data = stbi_load("../../../resource/container.jpg", &width, &height, &nrChannels, 0);
 
@@ -276,10 +310,20 @@ void opengl_scene_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 
 		glBindTexture(GL_TEXTURE_2D, 0);//可选，防止意外修改
 		stbi_image_free(data);
+
 		//和着色器中的片段着色器里的纹理采样器对应,并且对着色器配置前需要先use
 		opengl_shader_program_use(ctx);
+		//把纹理单元赋值给采样器
 		glUniform1i(glGetUniformLocation(ctx->shader_program, "texture0"), 0);
 		glUniform1i(glGetUniformLocation(ctx->shader_program, "texture1"), 1);
+
+		if (type == TYPE_MATRIX_01) {
+			glm::mat4 trans = glm::mat4(1.0f);	//生成一个单位矩阵
+			trans = glm::rotate(trans, glm::radians(90.0f), glm::vec3(0.0, 0.0, 1.0));
+			trans = glm::scale(trans, glm::vec3(0.5, 0.5, 0.5));
+
+			glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uTransform"), 1, GL_FALSE, glm::value_ptr(trans));
+		}
 	}
 	glBindBuffer(GL_ARRAY_BUFFER, 0);//可选，防止意外修改
 	glBindVertexArray(0);//可选，防止意外修改
@@ -290,7 +334,14 @@ void opengl_scene_draw(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	if (type == TYPE_TEXTURE_01) {
 		glBindTexture(GL_TEXTURE_2D, ctx->textures[0]);
 	}
-	if (type == TYPE_TEXTURE_02) {
+	if (type == TYPE_TEXTURE_02 || type == TYPE_MATRIX_01 || type == TYPE_MATRIX_02) {
+		if (type == TYPE_MATRIX_02) {
+			glm::mat4 trans = glm::mat4(1.0f);
+			trans = glm::translate(trans, glm::vec3(0.5f, -0.5f, 0.0f));
+			trans = glm::rotate(trans, (float)glfwGetTime(), glm::vec3(0.0f, 0.0f, 1.0f));
+			//确保调用下面之前已经调用了glUseProgram
+			glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uTransform"), 1, GL_FALSE, glm::value_ptr(trans));
+		}
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, ctx->textures[0]);
 		glActiveTexture(GL_TEXTURE1);
@@ -299,7 +350,11 @@ void opengl_scene_draw(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	if (type == TYPE_TRIANGLE_01 || type == TYPE_TRIANGLE_02 || type == TYPE_TEXTURE_01) {
 		glDrawArrays(GL_TRIANGLES, 0, 3);
 	}
-	if (type == TYPE_RECTANGLE_01 || type == TYPE_RECTANGLE_02 || type == TYPE_TEXTURE_02) {
+	if (type == TYPE_RECTANGLE_01 
+		|| type == TYPE_RECTANGLE_02 
+		|| type == TYPE_TEXTURE_02 
+		|| type == TYPE_MATRIX_01
+		|| type == TYPE_MATRIX_02) {
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); //索引是6个
 	}
 }
@@ -313,5 +368,9 @@ void opengl_scene_destroy(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	}
 	if (type == TYPE_TEXTURE_01) {
 		glDeleteTextures(1, &ctx->textures[0]);
+	}
+	if (type == TYPE_TEXTURE_02 || type == TYPE_MATRIX_01 || type == TYPE_MATRIX_02) {
+		glDeleteTextures(1, &ctx->textures[0]);
+		glDeleteTextures(1, &ctx->textures[1]);
 	}
 }

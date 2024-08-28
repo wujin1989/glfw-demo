@@ -15,6 +15,8 @@ typedef enum opengl_scene_type_e {
 	TYPE_RECTANGLE_02,
 	TYPE_TEXTURE_01,
 	TYPE_TEXTURE_02,
+	TYPE_MATRIX_01,
+	TYPE_MATRIX_02,
 }opengl_scene_type_t;
 
 extern void opengl_shader_program_create(opengl_ctx_t* ctx, opengl_scene_type_t type);

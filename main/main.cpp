@@ -1,9 +1,8 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
-#include <string.h>
-#include <stdlib.h>
-#include <stdio.h>
-#include <threads.h>
+#include <cstdio>
+#include <chrono>
+#include <thread>
 #include "opengl-examples.h"
 
 opengl_ctx_t opengl_ctx;
@@ -23,9 +22,7 @@ int main(void) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
-#if defined(__APPLE__)
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-#endif
+
 	GLFWwindow* window = glfwCreateWindow(800, 600, "GLFW-Demo", NULL, NULL);
 	if (window == NULL) {
 		printf("Failed to create GLFW window\n");
@@ -39,8 +36,8 @@ int main(void) {
 		printf("Failed to initialize GLAD\n");
 		abort();
 	}
-	opengl_shader_program_create(&opengl_ctx, TYPE_TEXTURE_02);
-	opengl_scene_create(&opengl_ctx, TYPE_TEXTURE_02);
+	opengl_shader_program_create(&opengl_ctx, TYPE_MATRIX_02);
+	opengl_scene_create(&opengl_ctx, TYPE_MATRIX_02);
 	opengl_shader_program_use(&opengl_ctx);
 
 	while (!glfwWindowShouldClose(window)) {
@@ -49,13 +46,13 @@ int main(void) {
 		glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		
-		opengl_scene_draw(&opengl_ctx, TYPE_TEXTURE_02);
+		opengl_scene_draw(&opengl_ctx, TYPE_MATRIX_02);
 
 		glfwPollEvents();
 		glfwSwapBuffers(window);
-		thrd_sleep(&(struct timespec) { .tv_sec = 0, .tv_nsec = 40000000 }, NULL);
+		//std::this_thread::sleep_for(std::chrono::milliseconds(40));
 	}
-	opengl_scene_destroy(&opengl_ctx, TYPE_TEXTURE_02);
+	opengl_scene_destroy(&opengl_ctx, TYPE_MATRIX_02);
 	opengl_shader_program_destroy(&opengl_ctx);
 
 	glfwTerminate();

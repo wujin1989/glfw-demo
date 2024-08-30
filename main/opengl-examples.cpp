@@ -840,7 +840,7 @@ static void _coords02_scene_create(opengl_ctx_t* ctx) {
 	glUniform1i(glGetUniformLocation(ctx->shader_program, "texture1"), 1);
 
 	glm::mat4 view = glm::mat4(1.0f);
-	// 场景在Z轴向负方向移动，说明摄像机在Z轴向正方向移动。
+	// 场景在Z轴向负方向移动，说明摄像机在Z轴向正方向移动。（x,y,z轴都是）
 	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
 
 	glm::mat4 projection = glm::mat4(1.0f);
@@ -932,10 +932,18 @@ static void _coords01_scene_draw(opengl_ctx_t* ctx) {
 static void _coords02_scene_draw(opengl_ctx_t* ctx) {
 	glBindVertexArray(ctx->vao);
 
-	glm::mat4 model = glm::mat4(1.0f);
-	model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
-	glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uModel"), 1, GL_FALSE, glm::value_ptr(model));
-	
+	glm::vec3 cubePositions[] = {
+		glm::vec3(0.0f,  0.0f,  0.0f),
+		glm::vec3(2.0f,  5.0f, -15.0f),
+		glm::vec3(-1.5f, -2.2f, -2.5f),
+		glm::vec3(-3.8f, -2.0f, -12.3f),
+		glm::vec3(2.4f, -0.4f, -3.5f),
+		glm::vec3(-1.7f,  3.0f, -7.5f),
+		glm::vec3(1.3f, -2.0f, -2.5f),
+		glm::vec3(1.5f,  2.0f, -2.5f),
+		glm::vec3(1.5f,  0.2f, -1.5f),
+		glm::vec3(-1.3f,  1.0f, -1.5f)
+	};
 	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, ctx->textures[0]);
 	glActiveTexture(GL_TEXTURE1);
@@ -944,7 +952,19 @@ static void _coords02_scene_draw(opengl_ctx_t* ctx) {
 	// 每次渲染迭代之前清除深度缓冲
 	glClear(GL_DEPTH_BUFFER_BIT);
 	glEnable(GL_DEPTH_TEST);
-	glDrawArrays(GL_TRIANGLES, 0, 36);
+
+	float factor = (float)glfwGetTime();
+
+	for (unsigned int i = 0; i < 10; i++) {
+		glm::mat4 model = glm::mat4(1.0f);
+		model = glm::translate(model, cubePositions[i]);
+		float angle = 20.0f * i + 20.0f;
+		model = glm::rotate(model, factor * glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
+
+		glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uModel"), 1, GL_FALSE, glm::value_ptr(model));
+		
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+	}
 }
 
 static void _triangle01_scene_destroy(opengl_ctx_t* ctx) {

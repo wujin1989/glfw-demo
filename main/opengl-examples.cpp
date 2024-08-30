@@ -222,6 +222,62 @@ static void _matrix02_shader_program_create(opengl_ctx_t* ctx) {
 	_common_shader_program_create(ctx, vertex_shader_source, frag_shader_source);
 }
 
+static void _coords01_shader_program_create(opengl_ctx_t* ctx) {
+	const char* vertex_shader_source =
+		"#version 330 core\n"
+		"layout (location = 0) in vec3 aPos;										\
+		 layout (location = 1) in vec2 aTexCoord;									\
+		 out vec2 TexCoord;															\
+		 uniform mat4 uModel;														\
+		 uniform mat4 uView;														\
+		 uniform mat4 uProjection;													\
+		 void main() {																\
+			gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);			\
+			TexCoord = aTexCoord;													\
+		 }																			\
+		";
+
+	const char* frag_shader_source =
+		"#version 330 core\n"
+		"out vec4 FragColor;																\
+		 in vec2 TexCoord;																	\
+		 uniform sampler2D texture0;														\
+		 uniform sampler2D texture1;														\
+		 void main() {																		\
+			FragColor = mix(texture(texture0, TexCoord), texture(texture1, TexCoord), 0.2);	\
+		 }																					\
+		";
+	_common_shader_program_create(ctx, vertex_shader_source, frag_shader_source);
+}
+
+static void _coords02_shader_program_create(opengl_ctx_t* ctx) {
+	const char* vertex_shader_source =
+		"#version 330 core\n"
+		"layout (location = 0) in vec3 aPos;										\
+		 layout (location = 1) in vec2 aTexCoord;									\
+		 out vec2 TexCoord;															\
+		 uniform mat4 uModel;														\
+		 uniform mat4 uView;														\
+		 uniform mat4 uProjection;													\
+		 void main() {																\
+			gl_Position = uProjection * uView * uModel * vec4(aPos, 1.0);			\
+			TexCoord = aTexCoord;													\
+		 }																			\
+		";
+
+	const char* frag_shader_source =
+		"#version 330 core\n"
+		"out vec4 FragColor;																\
+		 in vec2 TexCoord;																	\
+		 uniform sampler2D texture0;														\
+		 uniform sampler2D texture1;														\
+		 void main() {																		\
+			FragColor = mix(texture(texture0, TexCoord), texture(texture1, TexCoord), 0.2);	\
+		 }																					\
+		";
+	_common_shader_program_create(ctx, vertex_shader_source, frag_shader_source);
+}
+
 static void _triangle01_scene_create(opengl_ctx_t* ctx) {
 	float vertices[] = {
 		-0.5f,	-0.5f,	0.0f,
@@ -594,6 +650,209 @@ static void _matrix02_scene_create(opengl_ctx_t* ctx) {
 	glBindVertexArray(0);
 }
 
+static void _coords01_scene_create(opengl_ctx_t* ctx) {
+	float vertices[] = {
+		0.5f,	0.5f,	0.0f,	1.0f,	1.0f,   // 右上
+		0.5f,	-0.5f,	0.0f,	1.0f,	0.0f,   // 右下
+		-0.5f,	-0.5f,	0.0f,	0.0f,	0.0f,   // 左下
+		-0.5f,	0.5f,	0.0f,	0.0f,	1.0f    // 左上
+	};
+	unsigned int indices[] = {
+		0, 1, 3,
+		1, 2, 3
+	};
+	glGenVertexArrays(1, &ctx->vao);
+	glBindVertexArray(ctx->vao);
+
+	glGenBuffers(1, &ctx->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, ctx->vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glGenBuffers(1, &ctx->ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ctx->ebo);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	////////////////////////////////////////////////////////////////////////////
+	//加载的图片的(0,0)在左上角，但是opengl的视口的原点(0,0)在左下角
+	stbi_set_flip_vertically_on_load(1);
+
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load("../../../resource/container.jpg", &width, &height, &nrChannels, 0);
+
+	glGenTextures(1, &ctx->textures[0]);
+	glBindTexture(GL_TEXTURE_2D, ctx->textures[0]);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);//可选，防止意外修改
+	stbi_image_free(data);
+
+	data = stbi_load("../../../resource/awesomeface.png", &width, &height, &nrChannels, 0);
+
+	glGenTextures(1, &ctx->textures[1]);
+	glBindTexture(GL_TEXTURE_2D, ctx->textures[1]);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);//可选，防止意外修改
+	stbi_image_free(data);
+
+	//和着色器中的片段着色器里的纹理采样器对应,并且对着色器配置前需要先use
+	opengl_shader_program_use(ctx);
+	//把纹理单元赋值给采样器
+	glUniform1i(glGetUniformLocation(ctx->shader_program, "texture0"), 0);
+	glUniform1i(glGetUniformLocation(ctx->shader_program, "texture1"), 1);
+
+	glm::mat4 model = glm::mat4(1.0f);
+	//glm::vec3(1.0f, 0.0f, 0.0f)表示一个方向。这是一个单位向量
+	model = glm::rotate(model, glm::radians(-55.0f), glm::vec3(1.0f, 0.0f, 0.0f));
+
+	glm::mat4 view = glm::mat4(1.0f);
+	// 场景在Z轴向负方向移动，说明摄像机在Z轴向正方向移动。
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+	glm::mat4 projection = glm::mat4(1.0f);
+	projection = glm::perspective(glm::radians(45.0f), (float)(ctx->viewport_width / ctx->viewport_height), 0.1f, 100.0f);
+
+	glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uModel"), 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uView"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uProjection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);//可选，防止意外修改
+	glBindVertexArray(0);//可选，防止意外修改
+}
+
+static void _coords02_scene_create(opengl_ctx_t* ctx) {
+	//立方体每个面有六个顶点
+	float vertices[] = {
+	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 0.0f,
+
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 1.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+
+	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f, -0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f, -0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f, -0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f, -0.5f, -0.5f,  0.0f, 1.0f,
+
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f,
+	 0.5f,  0.5f, -0.5f,  1.0f, 1.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	 0.5f,  0.5f,  0.5f,  1.0f, 0.0f,
+	-0.5f,  0.5f,  0.5f,  0.0f, 0.0f,
+	-0.5f,  0.5f, -0.5f,  0.0f, 1.0f
+	};
+	glGenVertexArrays(1, &ctx->vao);
+	glBindVertexArray(ctx->vao);
+
+	glGenBuffers(1, &ctx->vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, ctx->vbo);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
+	glEnableVertexAttribArray(1);
+
+	////////////////////////////////////////////////////////////////////////////
+	//加载的图片的(0,0)在左上角，但是opengl的视口的原点(0,0)在左下角
+	stbi_set_flip_vertically_on_load(1);
+
+	int width, height, nrChannels;
+	unsigned char* data = stbi_load("../../../resource/container.jpg", &width, &height, &nrChannels, 0);
+
+	glGenTextures(1, &ctx->textures[0]);
+	glBindTexture(GL_TEXTURE_2D, ctx->textures[0]);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);//可选，防止意外修改
+	stbi_image_free(data);
+
+	data = stbi_load("../../../resource/awesomeface.png", &width, &height, &nrChannels, 0);
+
+	glGenTextures(1, &ctx->textures[1]);
+	glBindTexture(GL_TEXTURE_2D, ctx->textures[1]);
+
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+	glBindTexture(GL_TEXTURE_2D, 0);//可选，防止意外修改
+	stbi_image_free(data);
+
+	//和着色器中的片段着色器里的纹理采样器对应,并且对着色器配置前需要先use
+	opengl_shader_program_use(ctx);
+	//把纹理单元赋值给采样器
+	glUniform1i(glGetUniformLocation(ctx->shader_program, "texture0"), 0);
+	glUniform1i(glGetUniformLocation(ctx->shader_program, "texture1"), 1);
+
+	glm::mat4 view = glm::mat4(1.0f);
+	// 场景在Z轴向负方向移动，说明摄像机在Z轴向正方向移动。
+	view = glm::translate(view, glm::vec3(0.0f, 0.0f, -3.0f));
+
+	glm::mat4 projection = glm::mat4(1.0f);
+	projection = glm::perspective(glm::radians(45.0f), (float)(ctx->viewport_width / ctx->viewport_height), 0.1f, 100.0f);
+
+	glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uView"), 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uProjection"), 1, GL_FALSE, glm::value_ptr(projection));
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);//可选，防止意外修改
+	glBindVertexArray(0);//可选，防止意外修改
+}
+
 static void _triangle01_scene_draw(opengl_ctx_t* ctx) {
 	glBindVertexArray(ctx->vao);
 	glDrawArrays(GL_TRIANGLES, 0, 3);
@@ -659,6 +918,35 @@ static void _matrix02_scene_draw(opengl_ctx_t* ctx) {
 	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 }
 
+static void _coords01_scene_draw(opengl_ctx_t* ctx) {
+	glBindVertexArray(ctx->vao);
+
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, ctx->textures[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, ctx->textures[1]);
+
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
+}
+
+static void _coords02_scene_draw(opengl_ctx_t* ctx) {
+	glBindVertexArray(ctx->vao);
+
+	glm::mat4 model = glm::mat4(1.0f);
+	model = glm::rotate(model, (float)glfwGetTime() * glm::radians(50.0f), glm::vec3(0.5f, 1.0f, 0.0f));
+	glUniformMatrix4fv(glGetUniformLocation(ctx->shader_program, "uModel"), 1, GL_FALSE, glm::value_ptr(model));
+	
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, ctx->textures[0]);
+	glActiveTexture(GL_TEXTURE1);
+	glBindTexture(GL_TEXTURE_2D, ctx->textures[1]);
+
+	// 每次渲染迭代之前清除深度缓冲
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glEnable(GL_DEPTH_TEST);
+	glDrawArrays(GL_TRIANGLES, 0, 36);
+}
+
 static void _triangle01_scene_destroy(opengl_ctx_t* ctx) {
 	glDeleteVertexArrays(1, &ctx->vao);
 	glDeleteBuffers(1, &ctx->vbo);
@@ -711,6 +999,21 @@ static void _matrix02_scene_destroy(opengl_ctx_t* ctx) {
 	glDeleteTextures(1, &ctx->textures[1]);
 }
 
+static void _coords01_scene_destroy(opengl_ctx_t* ctx) {
+	glDeleteVertexArrays(1, &ctx->vao);
+	glDeleteBuffers(1, &ctx->vbo);
+	glDeleteBuffers(1, &ctx->ebo);
+	glDeleteTextures(1, &ctx->textures[0]);
+	glDeleteTextures(1, &ctx->textures[1]);
+}
+
+static void _coords02_scene_destroy(opengl_ctx_t* ctx) {
+	glDeleteVertexArrays(1, &ctx->vao);
+	glDeleteBuffers(1, &ctx->vbo);
+	glDeleteTextures(1, &ctx->textures[0]);
+	glDeleteTextures(1, &ctx->textures[1]);
+}
+
 void opengl_shader_program_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	if (type == TYPE_TRIANGLE_01) {
 		_triangle01_shader_program_create(ctx);
@@ -735,6 +1038,12 @@ void opengl_shader_program_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	}
 	if (type == TYPE_MATRIX_02) {
 		_matrix02_shader_program_create(ctx);
+	}
+	if (type == TYPE_COORDS_01) {
+		_coords01_shader_program_create(ctx);
+	}
+	if (type == TYPE_COORDS_02) {
+		_coords02_shader_program_create(ctx);
 	}
 }
 
@@ -771,6 +1080,12 @@ void opengl_scene_create(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	if (type == TYPE_MATRIX_02) {
 		_matrix02_scene_create(ctx);
 	}
+	if (type == TYPE_COORDS_01) {
+		_coords01_scene_create(ctx);
+	}
+	if (type == TYPE_COORDS_02) {
+		_coords02_scene_create(ctx);
+	}
 }
 
 void opengl_scene_draw(opengl_ctx_t* ctx, opengl_scene_type_t type) {
@@ -798,6 +1113,12 @@ void opengl_scene_draw(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	if (type == TYPE_MATRIX_02) {
 		_matrix02_scene_draw(ctx);
 	}
+	if (type == TYPE_COORDS_01) {
+		_coords01_scene_draw(ctx);
+	}
+	if (type == TYPE_COORDS_02) {
+		_coords02_scene_draw(ctx);
+	}
 }
 
 void opengl_scene_destroy(opengl_ctx_t* ctx, opengl_scene_type_t type) {
@@ -824,5 +1145,11 @@ void opengl_scene_destroy(opengl_ctx_t* ctx, opengl_scene_type_t type) {
 	}
 	if (type == TYPE_MATRIX_02) {
 		_matrix02_scene_destroy(ctx);
+	}
+	if (type == TYPE_COORDS_01) {
+		_coords01_scene_destroy(ctx);
+	}
+	if (type == TYPE_COORDS_02) {
+		_coords02_scene_destroy(ctx);
 	}
 }

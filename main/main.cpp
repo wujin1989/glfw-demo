@@ -5,12 +5,15 @@
 #include <thread>
 #include "opengl-examples.h"
 
-#define SCENE	TYPE_MATRIX_02
+#define SCENE	TYPE_COORDS_02
 opengl_ctx_t opengl_ctx;
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {
 	glViewport(0, 0, width, height);
 	printf("window size changed, width: %d, height: %d\n", width, height);
+
+	opengl_ctx.viewport_width = width;
+	opengl_ctx.viewport_height = height;
 }
 
 static void process_input(GLFWwindow* window) {
@@ -24,7 +27,13 @@ int main(void) {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
-	GLFWwindow* window = glfwCreateWindow(800, 600, "GLFW-Demo", NULL, NULL);
+	unsigned int window_width = 800;
+	unsigned int window_height = 600;
+
+	opengl_ctx.viewport_width = window_width;
+	opengl_ctx.viewport_height = window_height;
+
+	GLFWwindow* window = glfwCreateWindow(window_width, window_height, "GLFW-Demo", NULL, NULL);
 	if (window == NULL) {
 		printf("Failed to create GLFW window\n");
 		glfwTerminate();

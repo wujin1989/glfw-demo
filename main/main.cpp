@@ -5,7 +5,7 @@
 #include <thread>
 #include "opengl-examples.h"
 
-#define SCENE	TYPE_COORDS_02
+#define SCENE	TYPE_CAMERA_01
 opengl_ctx_t opengl_ctx;
 
 static void framebuffer_size_callback(GLFWwindow* window, int width, int height) {

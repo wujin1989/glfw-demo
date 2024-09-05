@@ -1454,6 +1454,31 @@ void opengl_scene_destroy(opengl_ctx_t* ctx) {
 	glDeleteTextures(sizeof(ctx->textures) / sizeof(ctx->textures[0]), ctx->textures);
 }
 
+glm::mat4 mylookAt(glm::vec3 position, glm::vec3 target, glm::vec3 worldUp) {
+	glm::vec3 front = glm::normalize(target - position);
+	glm::vec3 right = glm::normalize(glm::cross(front, worldUp));
+	glm::vec3 up = glm::normalize(glm::cross(right, front));
+
+	glm::mat4 translation = glm::mat4(1.0f);
+	translation[3][0] = -position.x;
+	translation[3][1] = -position.y;
+	translation[3][2] = -position.z;
+
+	glm::mat4 rotation = glm::mat4(1.0f);
+	//在 glm 中，由于列主布局，我们以 mat[col][row] 的形式访问元素
+	rotation[0][0] = right.x;
+	rotation[1][0] = right.y;
+	rotation[2][0] = right.z;
+	rotation[0][1] = up.x;
+	rotation[1][1] = up.y;
+	rotation[2][1] = up.z;
+	rotation[0][2] = -front.x;
+	rotation[1][2] = -front.y;
+	rotation[2][2] = -front.z;
+
+	return rotation * translation;//从右向左阅读（先平移，然后旋转）
+}
+
 static void _camera_setup(opengl_camera_t* camera) {
 	glm::vec3 front;
 	front.x = cos(glm::radians(camera->yaw)) * cos(glm::radians(camera->pitch));
@@ -1465,7 +1490,9 @@ static void _camera_setup(opengl_camera_t* camera) {
 	camera->up = glm::normalize(glm::cross(camera->right, camera->front));
 
 	camera->view = glm::mat4(1.0f);
-	camera->view = glm::lookAt(camera->pos, camera->pos + camera->front, camera->up);
+	//这里camera->up也可以是camera->world_up，只不过我们已经计算出了camera->up。
+	//camera->view = glm::lookAt(camera->pos, camera->pos + camera->front, camera->up);
+	camera->view = mylookAt(camera->pos, camera->pos + camera->front, camera->world_up);
 
 	camera->projection = glm::mat4(1.0f);
 	camera->projection = glm::perspective(glm::radians(camera->zoom), camera->aspect, 0.1f, 100.0f);
